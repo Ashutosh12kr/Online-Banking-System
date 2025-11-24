@@ -1,0 +1,100 @@
+Event Handling & Processing — Minimal Integration
+🔹 Idea
+
+Instead of running logic directly from menu input,
+we trigger events like:
+
+CREATE_ACCOUNT
+
+LOGIN
+
+DEPOSIT
+
+WITHDRAW
+
+TRANSFER
+
+Then the Bank class acts as an Event Processor, validating + performing actions.
+
+✔️ Add Event Interface
+interface BankEvent {
+    void process(Bank bank);
+}
+
+✔️ Sample Event Classes
+
+(Each event carries data → Bank executes them)
+
+Create Account Event
+class CreateAccountEvent implements BankEvent {
+    private String name, password;
+
+    public CreateAccountEvent(String name, String password) {
+        this.name = name;
+        this.password = password;
+    }
+
+    @Override
+    public void process(Bank bank) {
+        bank.createNewAccount(name, password);
+    }
+}
+
+Deposit Event
+class DepositEvent implements BankEvent {
+    private int accId;
+    private double amt;
+
+    public DepositEvent(int accId, double amt) {
+        this.accId = accId;
+        this.amt = amt;
+    }
+
+    @Override
+    public void process(Bank bank) {
+        bank.depositAmount(accId, amt);
+    }
+}
+
+✔️ Modify Bank to Handle Events
+public void handleEvent(BankEvent e) {
+    e.process(this);  // call event, pass bank object
+}
+
+✔️ Controller Dispatching (Menu)
+Old style:
+if(option == 1) bank.createNewAccount(...)
+
+New (Event-driven):
+case 1: {
+  String name = inputString("Enter name: ");
+  String pass = inputPassword("Enter password: ");
+  handleEvent(new CreateAccountEvent(name, pass));
+  break;
+}
+
+✔️ Example Add Deposit Event
+case 3: {
+  int id = inputInt("Enter acc ID: ");
+  double amt = inputDouble("Amount: ");
+  handleEvent(new DepositEvent(id, amt));
+  break;
+}
+
+🧠 How It Works
+
+User Action → Creates Event
+
+Event holds only the required input
+
+Event.process(bank)
+
+Calls safe bank operations
+
+Handles validation + data updates
+
+UI stays clean
+
+No business logic in menu
+
+Easy to extend
