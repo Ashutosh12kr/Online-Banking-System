@@ -1,0 +1,135 @@
+✅ 1. Account Creation
+
+Feature: Create new user account with name + password
+Where implemented: createNewAccount() in Bank
+
+How it works:
+
+Takes name + password
+
+Generates unique account ID
+
+Stores in HashMap
+
+public void createNewAccount(String name, String password) {
+    int accId = nextAccountId++;
+    Account acc = new Account(accId, name, password);
+    accounts.put(accId, acc);
+    System.out.println("Account created. ID: " + accId);
+}
+
+
+🔐 Password stored in account object
+🆔 Account ID auto-increment
+
+✅ 2. User Login / Authentication
+
+Feature: verify password before access
+Where: inside loginAccount()
+
+if (!acc.checkPassword(ps)) {
+    System.out.println("Authentication failed.");
+    return;
+}
+
+
+Prevents unauthorized access
+
+Uses Account class method checkPassword()
+
+✅ 3. Deposit Money
+
+Feature: Add money to account
+Where: depositAmount() → calls acc.deposit()
+
+public void depositAmount(int id, double amt) {
+    Account a = accounts.get(id);
+    a.deposit(amt);
+}
+
+
+Inside Account:
+
+public void deposit(double amt) {
+    balance += amt;
+}
+
+
+✔ Positive validation
+✔ Money never becomes negative
+
+✅ 4. Withdraw Money
+
+Feature: Withdraw only if enough balance
+Where: withdrawAmount() → calls acc.withdraw()
+
+Account logic ensures safety:
+
+public void withdraw(double amt) throws Exception {
+    if (amt > balance)
+        throw new Exception("Insufficient funds.");
+    balance -= amt;
+}
+
+
+🔐 Prevents overdraft
+🚫 Blocks negative input
+
+✅ 5. Check Balance
+
+Feature: display user’s current balance
+
+public double getBalance() {
+    return balance;
+}
+
+
+View menu simply prints it.
+
+✅ 6. Transfer Between Accounts
+
+Feature: Sends balance from one account to another
+Where: transferAmount()
+
+Account src = accounts.get(fromId);
+Account dst = accounts.get(toId);
+
+src.withdraw(amount);
+dst.deposit(amount);
+
+
+✔ Validates both accounts
+✔ Blocks insufficient funds
+✔ No negative transfers
+
+✅ 7. View Account Details
+
+Displays ID, name, balance.
+
+System.out.println("ID: " + acc.getAccountId());
+System.out.println("Name: " + acc.getName());
+System.out.println("Balance: " + acc.getBalance());
+
+✅ 8. Close Account (Safe Closure)
+
+Requires zero balance first
+
+if (acc.getBalance() != 0.0) {
+    System.out.println("Account must be 0 to close.");
+    return;
+}
+accounts.remove(id);
+
+
+✔ Prevents balance loss
+✔ Blocks accidental deletion
+
+🧠 Why These Are “Core Features”
+
+Because they cover complete banking lifecycle:
+
+Create → Login → Use → Manage → Exit
+
+Stable financial logic
+
+Consistent validation
