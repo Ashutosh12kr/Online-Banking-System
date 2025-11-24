@@ -1,0 +1,54 @@
+public interface IAccount {
+    int getAccountId();
+    String getName();
+    double getBalance();
+
+    void deposit(double amount);
+    void withdraw(double amount);
+    boolean checkPassword(String attempt);
+}
+📌 How to use it in your code
+Change your Account class to implement the interface:
+
+java
+Copy code
+class Account implements IAccount {
+    private final int accountId;
+    private final String name;
+    private final String password;
+    private double balance;
+
+    public Account(int accountId, String name, String password, double initialBalance) {
+        this.accountId = accountId;
+        this.name = name;
+        this.password = password;
+        this.balance = Math.max(0.0, initialBalance);
+    }
+
+    @Override
+    public int getAccountId() { return accountId; }
+
+    @Override
+    public String getName() { return name; }
+
+    @Override
+    public double getBalance() { return balance; }
+
+    @Override
+    public boolean checkPassword(String attempt) {
+        return password.equals(attempt);
+    }
+
+    @Override
+    public synchronized void deposit(double amount) {
+        if (amount <= 0) throw new IllegalArgumentException("Deposit amount must be positive.");
+        balance += amount;
+    }
+
+    @Override
+    public synchronized void withdraw(double amount) {
+        if (amount <= 0) throw new IllegalArgumentException("Withdraw amount must be positive.");
+        if (amount > balance) throw new IllegalArgumentException("Insufficient funds.");
+        balance -= amount;
+    }
+}
