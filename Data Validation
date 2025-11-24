@@ -1,0 +1,80 @@
+Data Validation Implemented in This Program
+✔️ 1. Name Input Validation
+
+The name cannot be empty when creating an account.
+
+If the user presses Enter without typing, account creation stops.
+
+if (name.isEmpty()) {
+    System.out.println("Name cannot be empty.");
+    return;
+}
+
+✔️ 2. Password Validation
+
+Password must be at least 4 characters.
+
+Loop continues until a valid password is entered.
+
+if (password.length() >= 4) break;
+
+✔️ 3. Positive Amount Validation
+
+Used in deposit, withdraw, and transfer.
+
+Amount must be non-negative.
+
+Rejects negative values and empty input.
+
+if (v < 0) {
+    System.out.println("Amount must be non-negative.");
+    return -1;
+}
+
+✔️ 4. Valid Integer Input for Account ID
+
+Rejects non-numeric input.
+
+Rejects empty input.
+
+try {
+    return Integer.parseInt(line);
+} catch (NumberFormatException e) {
+    System.out.println("Invalid number.");
+}
+
+✔️ 5. Authentication Validation
+
+User must enter the correct password.
+
+if (!acc.checkPassword(password)) {
+    System.out.println("Authentication failed.");
+    return;
+}
+
+✔️ 6. Withdraw / Transfer Validation
+
+Amount must be positive.
+
+Balance must be sufficient (No overdraft allowed).
+
+if (amount > balance) 
+    throw new IllegalArgumentException("Insufficient funds.");
+
+✔️ 7. Account Closure Validation
+
+Account can only be closed if balance = 0.0
+
+if (acc.getBalance() != 0.0) {
+    System.out.println("Account must have zero balance to close...");
+    return;
+}
+
+🚫 Invalid Data Examples Automatically Blocked
+Operation	Invalid Data	Result
+Create account	empty name	blocked
+Password	< 4 characters	loop until valid
+Deposit	negative number	rejected
+Withdraw	amount > balance	rejected
+Account ID	letters / spaces	rejected
+Close account	remaining balance	rejected
