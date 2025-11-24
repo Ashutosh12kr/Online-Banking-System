@@ -1,0 +1,185 @@
+Project Explanation — Online Banking System (Java Console App)
+🔹 1. Introduction
+
+This project is a Console-Based Online Banking System developed using Core Java (OOP).
+It allows a user to create bank accounts, log in, check balance, deposit money, withdraw money, transfer funds between accounts, and close accounts.
+All banking data is stored in Java collections (HashMap).
+
+🔹 2. Project Objective
+
+The main goal is to simulate real banking operations in a simple manner:
+
+Create a secure user account
+
+Authenticate using a password
+
+Perform financial operations safely
+
+Prevent invalid or dangerous transactions
+
+🔹 3. System Architecture
+
+The project uses three core components:
+
+✔️ (A) UI / Controller Layer
+
+Runs inside main() menu
+
+Takes user input from console
+
+Dispatches actions to Bank
+
+✔️ (B) Business Logic Layer — Bank Class
+
+Manages accounts
+
+Validates input
+
+Executes operations (deposit, withdraw, transfer)
+
+Stores accounts using a HashMap
+
+✔️ (C) Data Layer — Account Class
+
+Stores account details
+
+Encapsulates balance
+
+Protects password
+
+Offers functions to change account state
+
+🔹 4. Core Features & Implementation
+⭐ 1. Account Creation
+
+User enters name + password
+
+System generates unique account ID
+
+Stored in HashMap
+
+⭐ 2. User Authentication
+
+When logging in, password is compared
+
+Only valid accounts are allowed
+
+⭐ 3. Balance Inquiry
+
+The account shows current balance
+
+⭐ 4. Deposit
+
+Adds amount to account balance
+
+Blocks negative values
+
+⭐ 5. Withdraw
+
+Deducts money only if balance is enough
+
+Exceptions prevent overdrafts
+
+⭐ 6. Transfer
+
+Withdraws from sender → deposits to receiver
+
+Validates both accounts
+
+⭐ 7. Close Account
+
+Only possible if balance = 0
+
+Prevents accidental loss
+
+🔹 5. Data Structures Used
+✔️ HashMap
+private HashMap<Integer, Account> accounts;
+
+
+Used to store:
+
+Account ID → Account object
+
+Fast lookup: O(1)
+
+🔹 6. Object-Oriented Concepts Used
+🔵 Encapsulation
+
+All account details (balance, password) are private.
+
+🔵 Abstraction
+
+User interacts with menu → doesn’t see internal logic.
+
+🔵 Polymorphism (if IAccount interface used)
+
+Different account behaviors implement the same methods.
+
+🔵 Classes & Objects
+
+Each user = Account object
+
+🔹 7. Input Validation
+
+The program checks:
+
+Empty name
+
+Minimum password length
+
+Numeric input for IDs
+
+Non-negative deposit/withdraw
+
+Sufficient balance
+
+Account existence before operations
+
+This prevents runtime crashes and invalid state.
+
+🔹 8. Error Handling
+
+Uses try–catch blocks and logical checks:
+
+Wrong password
+
+Insufficient balance
+
+Invalid account number
+
+Ensures smooth and safe execution.
+
+🔹 9. Why This Project Is Important
+
+This project teaches essential concepts:
+
+Real-world simulations
+
+Banking logic
+
+Object-oriented programming
+
+Data validation
+
+CRUD operations on objects
+
+Console interaction
+
+Separation of UI and logic
+
+🔹 10. Future Enhancements
+
+To make it production-ready:
+
+MySQL database integration
+
+Password hashing using SHA-256
+
+GUI (JavaFX / Swing)
+
+Transaction history
+
+Role-based users (admin, customer)
+
+Online banking REST API
