@@ -1,185 +1,147 @@
-Project Explanation — Online Banking System (Java Console App)
-🔹 1. Introduction
+Project Explanation: Online Banking System
+1. Overview
 
-This project is a Console-Based Online Banking System developed using Core Java (OOP).
-It allows a user to create bank accounts, log in, check balance, deposit money, withdraw money, transfer funds between accounts, and close accounts.
-All banking data is stored in Java collections (HashMap).
+The Online Banking System is a console-based banking application implemented in Java. It demonstrates key Java concepts like OOP (Inheritance, Polymorphism, Interfaces), Collections, JDBC database connectivity, multithreading, and data validation. The system allows users to create accounts, deposit and withdraw money, and perform basic account management, while persisting account data in a MySQL database.
 
-🔹 2. Project Objective
+The project is designed for educational purposes, simulating real-world banking operations in a simplified manner.
 
-The main goal is to simulate real banking operations in a simple manner:
+2. Core Features
 
-Create a secure user account
+Account Management
 
-Authenticate using a password
+Users can create accounts with:
 
-Perform financial operations safely
+Account Holder Name (e.g., "Ashutosh Kumar")
 
-Prevent invalid or dangerous transactions
+Account ID (e.g., 1001)
 
-🔹 3. System Architecture
+Password (min 4 characters)
 
-The project uses three core components:
+Initial Deposit (>= 0)
 
-✔️ (A) UI / Controller Layer
+Account information is stored both in memory and in a MySQL database.
 
-Runs inside main() menu
+Login & Authentication
 
-Takes user input from console
+Users log in with Account ID and Password.
 
-Dispatches actions to Bank
+The system verifies credentials before allowing transactions.
 
-✔️ (B) Business Logic Layer — Bank Class
+Banking Operations
 
-Manages accounts
+Balance Inquiry: Check current account balance.
 
-Validates input
+Deposit: Add funds to the account.
 
-Executes operations (deposit, withdraw, transfer)
+Withdraw: Remove funds, respecting account rules:
 
-Stores accounts using a HashMap
+SavingsAccount: Cannot withdraw more than balance.
 
-✔️ (C) Data Layer — Account Class
+CurrentAccount: Allows overdraft up to a limit (e.g., 1000).
 
-Stores account details
+Multithreading Demo: Perform concurrent deposits and withdrawals safely using synchronized blocks.
 
-Encapsulates balance
+Account Listing
 
-Protects password
+Displays all accounts stored in memory.
 
-Offers functions to change account state
+Useful for debugging or admin operations.
 
-🔹 4. Core Features & Implementation
-⭐ 1. Account Creation
+3. Technical Implementation
+3.1 Object-Oriented Programming (OOP)
 
-User enters name + password
+Interface (IAccount) defines essential account methods.
 
-System generates unique account ID
+Abstract Class (Account) implements common functionality:
 
-Stored in HashMap
+deposit(), getBalance(), checkPassword().
 
-⭐ 2. User Authentication
+Child Classes (SavingsAccount, CurrentAccount) implement polymorphic withdraw() behavior.
 
-When logging in, password is compared
+Exception Handling: Ensures invalid operations (like overdrafts or negative deposits) are properly handled.
 
-Only valid accounts are allowed
+3.2 Collections & Generics
 
-⭐ 3. Balance Inquiry
+HashMap<Integer, IAccount> accountMap stores accounts in memory.
 
-The account shows current balance
+Supports fast lookup by Account ID.
 
-⭐ 4. Deposit
+Demonstrates use of Java Generics (Map<Integer, IAccount>).
 
-Adds amount to account balance
+3.3 Multithreading & Synchronization
 
-Blocks negative values
+TransactionThread class allows concurrent deposit/withdraw operations.
 
-⭐ 5. Withdraw
+Uses synchronized keyword to prevent race conditions on account balances.
 
-Deducts money only if balance is enough
+3.4 Database Connectivity (JDBC)
 
-Exceptions prevent overdrafts
+DBConnection class: Provides connection to MySQL bank_db.
 
-⭐ 6. Transfer
+AccountDAO class: Handles CRUD operations:
 
-Withdraws from sender → deposits to receiver
+saveAccount(), getAccount(), updateBalance(), getAllAccounts().
 
-Validates both accounts
+Ensures persistence: account data survives program restarts.
 
-⭐ 7. Close Account
+3.5 Data Validation
 
-Only possible if balance = 0
+Name: Cannot be empty.
 
-Prevents accidental loss
+Password: Minimum 4 characters.
 
-🔹 5. Data Structures Used
-✔️ HashMap
-private HashMap<Integer, Account> accounts;
+Deposit / Withdraw: Must be positive, and withdraw must not exceed allowed balance.
 
+Account ID: Must exist in memory/database for login and transactions.
 
-Used to store:
+4. Database Design
 
-Account ID → Account object
+Database: bank_db
 
-Fast lookup: O(1)
+Table: accounts
 
-🔹 6. Object-Oriented Concepts Used
-🔵 Encapsulation
+Columns:
 
-All account details (balance, password) are private.
+id (INT, PRIMARY KEY) → e.g., 1001
 
-🔵 Abstraction
+name (VARCHAR) → e.g., "Ashutosh Kumar"
 
-User interacts with menu → doesn’t see internal logic.
+password (VARCHAR) → user password
 
-🔵 Polymorphism (if IAccount interface used)
+balance (DOUBLE) → current account balance
 
-Different account behaviors implement the same methods.
+5. Example Workflow
 
-🔵 Classes & Objects
+Create Account
 
-Each user = Account object
+Name: Ashutosh Kumar
 
-🔹 7. Input Validation
+Password: 1234
 
-The program checks:
+Initial Deposit: 5000
 
-Empty name
+Account ID generated: 1001
 
-Minimum password length
+Login
 
-Numeric input for IDs
+Enter Account ID: 1001
 
-Non-negative deposit/withdraw
+Enter Password: 1234
 
-Sufficient balance
+Check Balance
 
-Account existence before operations
+Output: 5000
 
-This prevents runtime crashes and invalid state.
+Deposit / Withdraw
 
-🔹 8. Error Handling
+Deposit 200 → Balance: 5200
 
-Uses try–catch blocks and logical checks:
+Withdraw 300 → Balance: 4900
 
-Wrong password
+Multithreaded Transactions
 
-Insufficient balance
+Deposit 200 and Withdraw 150 concurrently → Balance updates safely
 
-Invalid account number
+Exit
 
-Ensures smooth and safe execution.
-
-🔹 9. Why This Project Is Important
-
-This project teaches essential concepts:
-
-Real-world simulations
-
-Banking logic
-
-Object-oriented programming
-
-Data validation
-
-CRUD operations on objects
-
-Console interaction
-
-Separation of UI and logic
-
-🔹 10. Future Enhancements
-
-To make it production-ready:
-
-MySQL database integration
-
-Password hashing using SHA-256
-
-GUI (JavaFX / Swing)
-
-Transaction history
-
-Role-based users (admin, customer)
-
-Online banking REST API
+Account balance updated in database automatically.
