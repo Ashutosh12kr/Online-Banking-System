@@ -1,100 +1,83 @@
-Event Handling & Processing — Minimal Integration
-🔹 Idea
+Event Handling & Processing in OnlineBankingSystem
+1. What is Event Handling?
 
-Instead of running logic directly from menu input,
-we trigger events like:
+In software, event handling is the process of responding to user actions such as clicking a button, entering input, or selecting a menu option.
 
-CREATE_ACCOUNT
+In a console application, these “events” are triggered by user input (via Scanner) and processed through switch-case statements or method calls.
 
-LOGIN
+2. Events in this Code
+a) Main Menu Events
 
-DEPOSIT
+User selects options in the main menu:
 
-WITHDRAW
+System.out.println("\n1. Create Account");
+System.out.println("2. Login");
+System.out.println("3. List Accounts");
+System.out.println("4. Exit");
+int ch = sc.nextInt(); sc.nextLine();
 
-TRANSFER
 
-Then the Bank class acts as an Event Processor, validating + performing actions.
+Each selection triggers a different event handler method:
 
-✔️ Add Event Interface
-interface BankEvent {
-    void process(Bank bank);
-}
+1 -> createAccount()
 
-✔️ Sample Event Classes
+2 -> login()
 
-(Each event carries data → Bank executes them)
+3 -> listAccounts()
 
-Create Account Event
-class CreateAccountEvent implements BankEvent {
-    private String name, password;
+4 -> System.exit(0)
 
-    public CreateAccountEvent(String name, String password) {
-        this.name = name;
-        this.password = password;
-    }
+Explanation: The switch (ch) statement acts as an event dispatcher, invoking the appropriate function when the user enters a choice.
 
-    @Override
-    public void process(Bank bank) {
-        bank.createNewAccount(name, password);
-    }
-}
+b) Account Menu Events
 
-Deposit Event
-class DepositEvent implements BankEvent {
-    private int accId;
-    private double amt;
+After login, the user sees the account menu:
 
-    public DepositEvent(int accId, double amt) {
-        this.accId = accId;
-        this.amt = amt;
-    }
+System.out.println("\n1. Balance");
+System.out.println("2. Deposit");
+System.out.println("3. Withdraw");
+System.out.println("4. Demo Multithread");
+System.out.println("5. Exit");
 
-    @Override
-    public void process(Bank bank) {
-        bank.depositAmount(accId, amt);
-    }
-}
 
-✔️ Modify Bank to Handle Events
-public void handleEvent(BankEvent e) {
-    e.process(this);  // call event, pass bank object
-}
+Each menu selection triggers a method call:
 
-✔️ Controller Dispatching (Menu)
-Old style:
-if(option == 1) bank.createNewAccount(...)
+1 -> show balance
 
-New (Event-driven):
-case 1: {
-  String name = inputString("Enter name: ");
-  String pass = inputPassword("Enter password: ");
-  handleEvent(new CreateAccountEvent(name, pass));
-  break;
-}
+2 -> doDeposit(acc)
 
-✔️ Example Add Deposit Event
-case 3: {
-  int id = inputInt("Enter acc ID: ");
-  double amt = inputDouble("Amount: ");
-  handleEvent(new DepositEvent(id, amt));
-  break;
-}
+3 -> doWithdraw(acc)
 
-🧠 How It Works
+4 -> doThreads(acc)
 
-User Action → Creates Event
+5 -> exit and update DB
 
-Event holds only the required input
+This is event-driven programming in a console context. The “events” are user choices, and the handlers are the respective methods.
 
-Event.process(bank)
+c) Multithreaded Transactions
 
-Calls safe bank operations
+The Demo Multithread option triggers two concurrent threads:
 
-Handles validation + data updates
+Thread t1 = new TransactionThread(acc, 200, true);  // deposit
+Thread t2 = new TransactionThread(acc, 150, false); // withdraw
+t1.start();
+t2.start();
 
-UI stays clean
 
-No business logic in menu
+Event: Thread execution
 
-Easy to extend
+Event handler: run() method of TransactionThread class processes the deposit/withdraw operations safely using synchronized.
+
+This shows concurrent event processing, ensuring balance consistency.
+
+3. Input Validation as Event Filtering
+
+All user inputs are validated before processing:
+
+if (amt <= 0) throw new Exception("Amount must be > 0");
+
+
+Invalid inputs trigger an error event, which is caught by exception handling, preventing crashes.
+
+
+
