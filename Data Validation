@@ -1,80 +1,52 @@
-Data Validation Implemented in This Program
-✔️ 1. Name Input Validation
+Data Validation Rules for OnlineBankingSystem
+Input / Operation	Validation Rule	Description / Error Message
+Account Name	Non-empty	Name cannot be empty.
+Password	Minimum 4 chars	Password too short.
+Initial Deposit	>= 0	Amount must be non-negative.
+Account ID (login, transfer)	Integer, existing in accountMap	Input must be a valid number; Account must exist.
+Deposit Amount	> 0	Deposit must be positive.
+Withdraw Amount	> 0 and <= balance (or overdraft limit for CurrentAccount)	Withdraw amount must be positive and not exceed allowed balance; error messages:
 
-The name cannot be empty when creating an account.
+"Amount must be > 0"
 
-If the user presses Enter without typing, account creation stops.
+"Insufficient funds"
 
+"Overdraft Limit exceeded" |
+| Multithread Transaction Amount | Same as deposit/withdraw rules | Threads respect synchronized account balance updates. |
+| Menu Choice (Main / Account Menu) | Valid integer in allowed range | Invalid choice shows: "Invalid option." |
+| Close Account (if implemented) | Balance must be 0 | Cannot close account with remaining funds. |
+| Account Map / DB Synchronization | Must exist in-memory and in DB | AccountMap must be updated with new accounts; DB must match. |
+
+Examples from Your Code
+
+1.Name Validation
+
+String name = sc.nextLine().trim();
 if (name.isEmpty()) {
     System.out.println("Name cannot be empty.");
     return;
 }
 
-✔️ 2. Password Validation
 
-Password must be at least 4 characters.
+2.Password Validation
 
-Loop continues until a valid password is entered.
-
-if (password.length() >= 4) break;
-
-✔️ 3. Positive Amount Validation
-
-Used in deposit, withdraw, and transfer.
-
-Amount must be non-negative.
-
-Rejects negative values and empty input.
-
-if (v < 0) {
-    System.out.println("Amount must be non-negative.");
-    return -1;
-}
-
-✔️ 4. Valid Integer Input for Account ID
-
-Rejects non-numeric input.
-
-Rejects empty input.
-
-try {
-    return Integer.parseInt(line);
-} catch (NumberFormatException e) {
-    System.out.println("Invalid number.");
-}
-
-✔️ 5. Authentication Validation
-
-User must enter the correct password.
-
-if (!acc.checkPassword(password)) {
-    System.out.println("Authentication failed.");
+String pass = sc.nextLine();
+if (pass.length() < 4) {
+    System.out.println("Password too short.");
     return;
 }
 
-✔️ 6. Withdraw / Transfer Validation
 
-Amount must be positive.
+3.Deposit/Withdraw Validation
 
-Balance must be sufficient (No overdraft allowed).
+if (amt <= 0) throw new IllegalArgumentException("Deposit must be > 0");
+if (amt > balance) throw new Exception("Insufficient funds");
 
-if (amount > balance) 
-    throw new IllegalArgumentException("Insufficient funds.");
 
-✔️ 7. Account Closure Validation
+4.Account ID Validation
 
-Account can only be closed if balance = 0.0
-
-if (acc.getBalance() != 0.0) {
-    System.out.println("Account must have zero balance to close...");
+IAccount acc = accountMap.get(id);
+if (acc == null) {
+    System.out.println("Not found!");
     return;
 }
-
-🚫 Invalid Data Examples Automatically Blocked
-Operation	Invalid Data	Result
-Create account	empty name	blocked
-Password	< 4 characters	loop until valid
-Deposit	negative number	rejected
-Withdraw	amount > balance	rejected
-Account ID	letters / spaces	rejected
-Close account	remaining balance	rejected
