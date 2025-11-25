@@ -1,54 +1,32 @@
-public interface IAccount {
-    int getAccountId();
-    String getName();
-    double getBalance();
+1. Interface: IAccount
 
-    void deposit(double amount);
-    void withdraw(double amount);
-    boolean checkPassword(String attempt);
+In your code, the interface defines core behaviors for any type of bank account (Savings or Current). It allows polymorphism so that methods can operate on any account type without knowing the exact class.
+
+interface IAccount {
+    void deposit(double amt);           // Deposit money into account
+    void withdraw(double amt) throws Exception; // Withdraw money, may throw exception
+    double getBalance();                // Get current balance
+    int getAccountId();                 // Get unique account ID
+    String getName();                   // Get account holder name
 }
-📌 How to use it in your code
-Change your Account class to implement the interface:
 
-java
-Copy code
-class Account implements IAccount {
-    private final int accountId;
-    private final String name;
-    private final String password;
-    private double balance;
+Explanation of Interface Methods
+Method	Purpose in Code
+deposit(double amt)	Adds money to the account. Used in doDeposit() and TransactionThread.
+withdraw(double amt)	Withdraws money, validating balance and overdraft limits. Used in doWithdraw() and multithreaded transactions.
+getBalance()	Returns current balance. Used in account menu and transaction display.
+getAccountId()	Returns account ID. Used in login, account listing, and database operations.
+getName()	Returns holder name. Used in account menu, listing, and display.
+Key Points
 
-    public Account(int accountId, String name, String password, double initialBalance) {
-        this.accountId = accountId;
-        this.name = name;
-        this.password = password;
-        this.balance = Math.max(0.0, initialBalance);
-    }
+Polymorphism:
+Both SavingsAccount and CurrentAccount implement IAccount. Methods like deposit() and withdraw() can be called on any account type.
 
-    @Override
-    public int getAccountId() { return accountId; }
+Thread Safety:
+Methods deposit() and withdraw() are synchronized in the implementing classes to prevent race conditions in multithreading.
 
-    @Override
-    public String getName() { return name; }
+Exception Handling:
+withdraw() can throw exceptions for invalid amount or insufficient balance, allowing robust error handling.
 
-    @Override
-    public double getBalance() { return balance; }
-
-    @Override
-    public boolean checkPassword(String attempt) {
-        return password.equals(attempt);
-    }
-
-    @Override
-    public synchronized void deposit(double amount) {
-        if (amount <= 0) throw new IllegalArgumentException("Deposit amount must be positive.");
-        balance += amount;
-    }
-
-    @Override
-    public synchronized void withdraw(double amount) {
-        if (amount <= 0) throw new IllegalArgumentException("Withdraw amount must be positive.");
-        if (amount > balance) throw new IllegalArgumentException("Insufficient funds.");
-        balance -= amount;
-    }
-}
+Decoupling:
+The interface allows the OnlineBankingSystem code and DAO to work with IAccount objects without knowing the exact class type, making it easier to extend with new account types.
