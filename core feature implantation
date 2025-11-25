@@ -1,135 +1,162 @@
-✅ 1. Account Creation
+Core Feature Implementation in OnlineBankingSystem
+1. Account Creation
 
-Feature: Create new user account with name + password
-Where implemented: createNewAccount() in Bank
+Feature: Create a new bank account for a user.
 
-How it works:
+Implementation:
 
-Takes name + password
+int id = new Random().nextInt(9000) + 1000;
+IAccount acc = new SavingsAccount(id, name, pass, bal);
+accountMap.put(id, acc);
+dao.saveAccount(acc);
 
-Generates unique account ID
 
-Stores in HashMap
+Details:
 
-public void createNewAccount(String name, String password) {
-    int accId = nextAccountId++;
-    Account acc = new Account(accId, name, password);
-    accounts.put(accId, acc);
-    System.out.println("Account created. ID: " + accId);
+Generates a unique account ID (1000–9999).
+
+Creates a SavingsAccount object (polymorphism via IAccount interface).
+
+Saves account in-memory (HashMap) and database (JDBC).
+
+2. Login / Authentication
+
+Feature: Login existing account with ID and password.
+
+Implementation:
+
+IAccount acc = accountMap.get(id);
+if (!((Account) acc).checkPassword(p)) {
+    System.out.println("Wrong Password");
 }
 
 
-🔐 Password stored in account object
-🆔 Account ID auto-increment
+Details:
 
-✅ 2. User Login / Authentication
+Checks if account exists in in-memory map.
 
-Feature: verify password before access
-Where: inside loginAccount()
+Validates password using checkPassword method.
 
-if (!acc.checkPassword(ps)) {
-    System.out.println("Authentication failed.");
-    return;
-}
+If authenticated, opens account menu.
 
+3. Balance Check
 
-Prevents unauthorized access
+Feature: Display current account balance.
 
-Uses Account class method checkPassword()
+Implementation:
 
-✅ 3. Deposit Money
-
-Feature: Add money to account
-Where: depositAmount() → calls acc.deposit()
-
-public void depositAmount(int id, double amt) {
-    Account a = accounts.get(id);
-    a.deposit(amt);
-}
-
-
-Inside Account:
-
-public void deposit(double amt) {
-    balance += amt;
-}
-
-
-✔ Positive validation
-✔ Money never becomes negative
-
-✅ 4. Withdraw Money
-
-Feature: Withdraw only if enough balance
-Where: withdrawAmount() → calls acc.withdraw()
-
-Account logic ensures safety:
-
-public void withdraw(double amt) throws Exception {
-    if (amt > balance)
-        throw new Exception("Insufficient funds.");
-    balance -= amt;
-}
-
-
-🔐 Prevents overdraft
-🚫 Blocks negative input
-
-✅ 5. Check Balance
-
-Feature: display user’s current balance
-
-public double getBalance() {
-    return balance;
-}
-
-
-View menu simply prints it.
-
-✅ 6. Transfer Between Accounts
-
-Feature: Sends balance from one account to another
-Where: transferAmount()
-
-Account src = accounts.get(fromId);
-Account dst = accounts.get(toId);
-
-src.withdraw(amount);
-dst.deposit(amount);
-
-
-✔ Validates both accounts
-✔ Blocks insufficient funds
-✔ No negative transfers
-
-✅ 7. View Account Details
-
-Displays ID, name, balance.
-
-System.out.println("ID: " + acc.getAccountId());
-System.out.println("Name: " + acc.getName());
 System.out.println("Balance: " + acc.getBalance());
 
-✅ 8. Close Account (Safe Closure)
 
-Requires zero balance first
+Details:
 
-if (acc.getBalance() != 0.0) {
-    System.out.println("Account must be 0 to close.");
-    return;
+Calls getBalance() from the Account class.
+
+Real-time display of balance.
+
+4. Deposit
+
+Feature: Add money to the account.
+
+Implementation:
+
+acc.deposit(amt);
+dao.updateBalance(acc);
+
+
+Details:
+
+Synchronized deposit ensures thread-safe operations.
+
+Updates database via AccountDAO.updateBalance.
+
+Validates amount to be greater than 0.
+
+5. Withdraw
+
+Feature: Withdraw money from the account.
+
+Implementation:
+
+acc.withdraw(amt);
+dao.updateBalance(acc);
+
+
+Details:
+
+Uses SavingsAccount.withdraw() or CurrentAccount.withdraw() for polymorphic behavior.
+
+Validates sufficient funds (with overdraft for current account).
+
+Exception handling prevents negative balance.
+
+6. Multithreaded Transactions
+
+Feature: Simulate concurrent deposits and withdrawals.
+
+Implementation:
+
+Thread t1 = new TransactionThread(acc, 200, true);
+Thread t2 = new TransactionThread(acc, 150, false);
+t1.start();
+t2.start();
+
+
+Details:
+
+Demonstrates multithreading & synchronization.
+
+synchronized ensures balance consistency.
+
+Prints transaction completion messages in real time.
+
+7. Account Listing
+
+Feature: List all accounts (admin/debug feature).
+
+Implementation:
+
+for (IAccount a : accountMap.values()) {
+    System.out.printf("ID: %d | Name: %s | Balance: %.2f\n", a.getAccountId(), a.getName(), a.getBalance());
 }
-accounts.remove(id);
 
 
-✔ Prevents balance loss
-✔ Blocks accidental deletion
+Details:
 
-🧠 Why These Are “Core Features”
+Uses Collections & Generics (HashMap<Integer,IAccount>).
 
-Because they cover complete banking lifecycle:
+Provides quick overview of all accounts.
 
-Create → Login → Use → Manage → Exit
+8. Database Integration (JDBC)
 
-Stable financial logic
+Feature: Persist account data in MySQL database.
 
-Consistent validation
+Implementation:
+
+dao.saveAccount(acc);
+dao.updateBalance(acc);
+dao.getAllAccounts();
+
+
+Details:
+
+Uses DBConnection for database connection.
+
+Implements CRUD operations in AccountDAO.
+
+Ensures data consistency between memory and database.
+
+9. Data Validation
+
+Feature: Validate all user inputs and transactions.
+
+Implementation:
+
+Deposit and withdrawal amounts > 0.
+
+Password length validated during creation.
+
+Checks sufficient balance for withdrawal.
+
+Invalid inputs throw exceptions and show error messages.
+
