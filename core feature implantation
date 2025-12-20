@@ -1,162 +1,127 @@
-Core Feature Implementation in OnlineBankingSystem
-1. Account Creation
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.sql.*;
+import java.util.*;
 
-Feature: Create a new bank account for a user.
-
-Implementation:
-
-int id = new Random().nextInt(9000) + 1000;
-IAccount acc = new SavingsAccount(id, name, pass, bal);
-accountMap.put(id, acc);
-dao.saveAccount(acc);
-
-
-Details:
-
-Generates a unique account ID (1000–9999).
-
-Creates a SavingsAccount object (polymorphism via IAccount interface).
-
-Saves account in-memory (HashMap) and database (JDBC).
-
-2. Login / Authentication
-
-Feature: Login existing account with ID and password.
-
-Implementation:
-
-IAccount acc = accountMap.get(id);
-if (!((Account) acc).checkPassword(p)) {
-    System.out.println("Wrong Password");
+// ----------------- INTERFACE -----------------
+interface IAccount {
+    void deposit(double amt);
+    void withdraw(double amt) throws Exception;
+    double getBalance();
+    int getAccountId();
+    String getName();
 }
 
+// ----------------- ABSTRACT CLASS -----------------
+abstract class Account implements IAccount {
+    protected int id;
+    protected String name;
+    protected String password;
+    protected double balance;
 
-Details:
-
-Checks if account exists in in-memory map.
-
-Validates password using checkPassword method.
-
-If authenticated, opens account menu.
-
-3. Balance Check
-
-Feature: Display current account balance.
-
-Implementation:
-
-System.out.println("Balance: " + acc.getBalance());
-
-
-Details:
-
-Calls getBalance() from the Account class.
-
-Real-time display of balance.
-
-4. Deposit
-
-Feature: Add money to the account.
-
-Implementation:
-
-acc.deposit(amt);
-dao.updateBalance(acc);
-
-
-Details:
-
-Synchronized deposit ensures thread-safe operations.
-
-Updates database via AccountDAO.updateBalance.
-
-Validates amount to be greater than 0.
-
-5. Withdraw
-
-Feature: Withdraw money from the account.
-
-Implementation:
-
-acc.withdraw(amt);
-dao.updateBalance(acc);
-
-
-Details:
-
-Uses SavingsAccount.withdraw() or CurrentAccount.withdraw() for polymorphic behavior.
-
-Validates sufficient funds (with overdraft for current account).
-
-Exception handling prevents negative balance.
-
-6. Multithreaded Transactions
-
-Feature: Simulate concurrent deposits and withdrawals.
-
-Implementation:
-
-Thread t1 = new TransactionThread(acc, 200, true);
-Thread t2 = new TransactionThread(acc, 150, false);
-t1.start();
-t2.start();
-
-
-Details:
-
-Demonstrates multithreading & synchronization.
-
-synchronized ensures balance consistency.
-
-Prints transaction completion messages in real time.
-
-7. Account Listing
-
-Feature: List all accounts (admin/debug feature).
-
-Implementation:
-
-for (IAccount a : accountMap.values()) {
-    System.out.printf("ID: %d | Name: %s | Balance: %.2f\n", a.getAccountId(), a.getName(), a.getBalance());
+    public Account(int id, String name, String pass, double bal) {
+        this.id = id; this.name = name; this.password = pass; this.balance = bal;
+    }
+    public int getAccountId() { return id; }
+    public String getName() { return name; }
+    public double getBalance() { return balance; }
+    public boolean checkPassword(String p) { return password.equals(p); }
+    public synchronized void deposit(double amt) { if(amt<=0) throw new IllegalArgumentException(); balance+=amt; }
 }
 
+// ----------------- CHILD CLASS -----------------
+class SavingsAccount extends Account {
+    public SavingsAccount(int id,String n,String p,double b){ super(id,n,p,b); }
+    public synchronized void withdraw(double amt) throws Exception{
+        if(amt<=0) throw new Exception("Invalid"); 
+        if(amt>balance) throw new Exception("Insufficient");
+        balance-=amt;
+    }
+}
 
-Details:
+// ----------------- DATABASE CONNECTION -----------------
+class DBConnection {
+    static final String URL="jdbc:mysql://localhost:3306/bank_db";
+    static final String USER="root"; static final String PASS="";
+    static { try { Class.forName("com.mysql.cj.jdbc.Driver"); } catch(Exception e) { System.out.println("Driver error"); } }
+    public static Connection getConnection() throws SQLException { return DriverManager.getConnection(URL,USER,PASS); }
+}
 
-Uses Collections & Generics (HashMap<Integer,IAccount>).
+// ----------------- DAO -----------------
+class AccountDAO {
+    public void save(IAccount acc) throws Exception {
+        Account a=(Account)acc;
+        try(Connection con=DBConnection.getConnection();
+            PreparedStatement ps=con.prepareStatement("INSERT INTO accounts VALUES(?,?,?,?)")){
+            ps.setInt(1,a.id); ps.setString(2,a.name); ps.setString(3,a.password); ps.setDouble(4,a.balance); ps.executeUpdate();
+        }
+    }
+    public IAccount get(int id) throws Exception {
+        try(Connection con=DBConnection.getConnection();
+            PreparedStatement ps=con.prepareStatement("SELECT * FROM accounts WHERE id=?")){
+            ps.setInt(1,id); ResultSet rs=ps.executeQuery();
+            if(!rs.next()) return null;
+            return new SavingsAccount(rs.getInt("id"),rs.getString("name"),rs.getString("password"),rs.getDouble("balance"));
+        }
+    }
+    public void update(IAccount acc) throws Exception {
+        try(Connection con=DBConnection.getConnection();
+            PreparedStatement ps=con.prepareStatement("UPDATE accounts SET balance=? WHERE id=?")){
+            ps.setDouble(1,acc.getBalance()); ps.setInt(2,acc.getAccountId()); ps.executeUpdate();
+        }
+    }
+}
 
-Provides quick overview of all accounts.
+// ----------------- MULTITHREADING -----------------
+class TransactionThread extends Thread {
+    private IAccount acc; private double amt; private boolean deposit;
+    public TransactionThread(IAccount acc,double amt,boolean dep){ this.acc=acc; this.amt=amt; this.deposit=dep; }
+    public void run(){ synchronized(acc){ try{ if(deposit) acc.deposit(amt); else acc.withdraw(amt); } catch(Exception e){ System.out.println("Transaction failed"); } } }
+}
 
-8. Database Integration (JDBC)
+// ----------------- GUI -----------------
+public class CoreBankingSystem extends JFrame {
+    JTextField idField,nameField,amtField; JPasswordField passField; JTextArea out; 
+    AccountDAO dao=new AccountDAO(); IAccount current=null;
 
-Feature: Persist account data in MySQL database.
+    public CoreBankingSystem(){
+        setTitle("Online Banking"); setSize(400,400); setLayout(new GridLayout(6,2)); setDefaultCloseOperation(EXIT_ON_CLOSE);
+        idField=new JTextField(); nameField=new JTextField(); passField=new JPasswordField(); amtField=new JTextField(); out=new JTextArea();
+        JButton create=new JButton("Create"), login=new JButton("Login"), dep=new JButton("Deposit"), wit=new JButton("Withdraw");
+        add(new JLabel("ID")); add(idField); add(new JLabel("Name")); add(nameField); add(new JLabel("Password")); add(passField); add(new JLabel("Amount")); add(amtField);
+        add(create); add(login); add(dep); add(wit); add(new JLabel("Output")); add(new JScrollPane(out));
+        create.addActionListener(e->createAcc()); login.addActionListener(e->loginAcc()); dep.addActionListener(e->depositAmt()); wit.addActionListener(e->withdrawAmt());
+        setVisible(true);
+    }
 
-Implementation:
+    void createAcc(){ 
+        try{ int id=new Random().nextInt(9000)+1000;
+            IAccount acc=new SavingsAccount(id,nameField.getText(),new String(passField.getPassword()),Double.parseDouble(amtField.getText()));
+            dao.save(acc); current=acc; out.setText("Created ID:"+id); 
+        } catch(Exception e){ out.setText("Error creating account"); } 
+    }
 
-dao.saveAccount(acc);
-dao.updateBalance(acc);
-dao.getAllAccounts();
+    void loginAcc(){ 
+        try{ int id=Integer.parseInt(idField.getText()); current=dao.get(id);
+            if(current!=null && ((Account)current).checkPassword(new String(passField.getPassword()))) out.setText("Login OK\nBalance:"+current.getBalance());
+            else out.setText("Login Failed");
+        } catch(Exception e){ out.setText("Error"); } 
+    }
 
+    void depositAmt(){ 
+        try{ double a=Double.parseDouble(amtField.getText()); 
+            TransactionThread t=new TransactionThread(current,a,true); t.start(); t.join(); dao.update(current);
+            out.setText("Deposited\nBalance:"+current.getBalance()); 
+        } catch(Exception e){ out.setText("Deposit failed"); } 
+    }
 
-Details:
+    void withdrawAmt(){ 
+        try{ double a=Double.parseDouble(amtField.getText()); 
+            TransactionThread t=new TransactionThread(current,a,false); t.start(); t.join(); dao.update(current);
+            out.setText("Withdrawn\nBalance:"+current.getBalance()); 
+        } catch(Exception e){ out.setText("Withdrawal failed"); } 
+    }
 
-Uses DBConnection for database connection.
-
-Implements CRUD operations in AccountDAO.
-
-Ensures data consistency between memory and database.
-
-9. Data Validation
-
-Feature: Validate all user inputs and transactions.
-
-Implementation:
-
-Deposit and withdrawal amounts > 0.
-
-Password length validated during creation.
-
-Checks sufficient balance for withdrawal.
-
-Invalid inputs throw exceptions and show error messages.
-
+    public static void main(String[] args){ new CoreBankingSystem(); }
+}
