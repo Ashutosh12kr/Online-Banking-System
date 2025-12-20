@@ -1,144 +1,97 @@
-Online Banking System - Java Console Application
-Overview
+# Online Banking System (Java GUI)
 
-OnlineBankingSystem is a console-based banking application implemented in Java. It demonstrates key OOP concepts, collections, multithreading, and database integration (JDBC). Users can create accounts, log in, deposit/withdraw money, and view balances. The system also supports thread-safe transactions and stores account data in a MySQL database.
+## Overview
+This is a **Java-based Online Banking System** with GUI, implementing core banking operations such as account creation, login, deposit, and withdrawal. The system integrates **OOP principles**, **JDBC database connectivity**, **multithreading**, and **event-driven GUI** using Swing.
 
-Features
+---
 
-Account Management
+## Features
 
-Create new accounts with random account IDs.
+### 1. OOP Implementation
+- **Interface (`IAccount`)** for account operations
+- **Abstract class (`Account`)** for common account properties
+- **Inheritance & Polymorphism** via `SavingsAccount` class
+- **Exception Handling** for invalid operations
 
-Login to existing accounts using account ID and password.
+### 2. GUI (Event Handling & Processing)
+- Built with **Java Swing**
+- Responsive buttons: Create Account, Login, Deposit, Withdraw
+- Input validation for account creation and transactions
+- Event handling via **ActionListener** and **Lambda expressions**
 
-View account balance.
+### 3. Collections & Generics
+- `Map<Integer, IAccount>` used to store accounts in memory
 
-Deposit and withdraw money.
+### 4. Multithreading & Synchronization
+- Transaction operations (deposit/withdraw) use **threads**
+- `synchronized` methods ensure thread safety
 
-Multithreading
+### 5. Database Connectivity (JDBC)
+- MySQL database used to store account data
+- DAO class handles **CRUD operations**
+- JDBC ensures persistent storage
 
-Demo of concurrent deposit and withdrawal using threads.
+### 6. Data Validation
+- Amounts cannot be negative or zero
+- Password and account ID verified during login
+- GUI displays error messages for invalid input
 
-Synchronized operations to prevent race conditions.
+### 7. Innovation / Extra Effort
+- GUI integrated with multithreading and database
+- Real-time updates in GUI after transactions
+- Thread-safe transactions using `TransactionThread`
 
-Database Integration
+---
 
-Accounts stored in MySQL database (bank_db) using JDBC.
+## Setup Instructions
 
-CRUD operations through AccountDAO class.
+1. **Database Setup**
+   - Create MySQL database `bank_db`
+   - Table structure:
+     ```sql
+     CREATE TABLE accounts (
+       id INT PRIMARY KEY,
+       name VARCHAR(50),
+       password VARCHAR(50),
+       balance DOUBLE
+     );
+     ```
+2. **Run the Application**
+   - Ensure MySQL server is running
+   - Compile and run `OnlineBankingSystemGUI.java`
+   - GUI will open for interaction
 
-Accounts loaded into in-memory Map for fast access.
+---
 
-Account Types
+## Usage
 
-SavingsAccount: Standard withdrawal.
+1. **Create Account:** Enter Name, Password, Initial Deposit → Click *Create Account*
+2. **Login:** Enter Account ID & Password → Click *Login*
+3. **Deposit / Withdraw:** Enter Amount → Click respective button
+4. **View Balance:** After login, balance is displayed in GUI output area
 
-CurrentAccount: Allows overdraft up to a limit.
+---
 
-Collections & Generics
+## Project Rubric Mapping
 
-Map<Integer, IAccount> stores accounts in-memory for fast lookup.
+| Feature | Implemented |
+|---------|------------|
+| OOP (Polymorphism, Inheritance, Exception Handling, Interfaces) | ✅ |
+| Collections & Generics | ✅ |
+| Multithreading & Synchronization | ✅ |
+| Classes for DB operations | ✅ |
+| Database Connectivity (JDBC) | ✅ |
+| GUI & Event Handling | ✅ |
+| Input Validation | ✅ |
+| Innovation / Extra Effort | ✅ |
 
-Core Concepts Demonstrated
-Concept	Implementation
-OOP	IAccount interface, Account abstract class, inheritance via SavingsAccount and CurrentAccount
-Polymorphism	IAccount acc references both Savings and Current accounts
-Exception Handling	Handles insufficient funds, invalid deposit/withdraw amounts
-Collections	HashMap<Integer, IAccount> to store accounts in-memory
-Multithreading	TransactionThread class with synchronized deposit/withdraw methods
-Database (JDBC)	DBConnection and AccountDAO for MySQL operations
-Project Structure
+---
 
-OnlineBankingSystem.java – Main class, handles UI and user interactions.
+## Author
+- Your Name  
+- Email / GitHub
 
-IAccount.java – Interface for account operations.
+---
 
-Account.java – Abstract class for common account logic.
-
-SavingsAccount.java – Implements standard withdrawal rules.
-
-CurrentAccount.java – Implements overdraft rules.
-
-DBConnection.java – Handles MySQL database connection.
-
-AccountDAO.java – Performs CRUD operations in the database.
-
-TransactionThread.java – Demonstrates multithreaded transactions.
-
-Database Setup
-
-Create database
-
-CREATE DATABASE bank_db;
-
-
-Create accounts table
-
-USE bank_db;
-
-CREATE TABLE accounts (
-    id INT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    password VARCHAR(50) NOT NULL,
-    balance DOUBLE NOT NULL
-);
-
-
-MySQL Connection
-
-Username: root
-
-Password: empty ("")
-
-URL: jdbc:mysql://localhost:3306/bank_db
-
-Make sure MySQL server is running and JDBC driver is available.
-
-How to Compile and Run
-
-Open terminal or command prompt.
-
-Navigate to project folder containing OnlineBankingSystem.java.
-
-Compile:
-
-javac OnlineBankingSystem.java
-
-
-Run:
-
-java OnlineBankingSystem
-
-Sample Console Interaction
-1. Create Account
-2. Login
-3. List Accounts
-4. Exit
-Select: 1
-
-Name: John Doe
-Password: 1234
-Initial Deposit: 5000
-Account Created. Your ID: 1023
-
-Select: 2
-Account ID: 1023
-Password: 1234
-Welcome, John Doe!
-1. Balance
-2. Deposit
-3. Withdraw
-4. Demo Multithread
-5. Exit
-Select: 1
-Balance: 5000.0
-
-Notes
-
-Thread safety is ensured using synchronized methods in Account and TransactionThread.
-
-Passwords are stored in plain text for demo purposes (not recommended for production).
-
-In-memory Map improves performance by caching accounts while still persisting them to MySQL.
-
-Supports multithreaded deposit and withdrawal demonstrations.
+## License
+This project is for academic purposes.
