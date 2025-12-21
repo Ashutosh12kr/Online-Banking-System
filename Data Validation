@@ -1,377 +1,127 @@
-import javax.swing.*;
-import java.awt.*;
-import java.sql.*;
-import java.util.*;
+1️⃣ GUI INPUT VALIDATION (MOST IMPORTANT)
+✅ Validate Name
+if (nameField.getText().trim().isEmpty()) {
+    output.setText("Name cannot be empty");
+    return;
+}
 
-/* =======================
-   VALIDATION CLASS
-======================= */
-class Validator {
+✅ Validate Password
+String pass = new String(passField.getPassword());
+if (pass.length() < 4) {
+    output.setText("Password must be at least 4 characters");
+    return;
+}
 
-    static boolean isValidName(String name) {
-        return name != null && name.matches("[A-Za-z ]{3,}");
+✅ Validate Amount
+double amt;
+try {
+    amt = Double.parseDouble(amountField.getText());
+    if (amt <= 0) {
+        output.setText("Amount must be positive");
+        return;
     }
+} catch (NumberFormatException e) {
+    output.setText("Invalid Amount Format");
+    return;
+}
 
-    static boolean isValidPassword(String pass) {
-        return pass != null && pass.length() >= 4;
-    }
-
-    static boolean isValidAmount(String amt) {
-        try {
-            return Double.parseDouble(amt) > 0;
-        } catch (Exception e) {
-            return false;
+2️⃣ CREATE ACCOUNT VALIDATION (UPDATED METHOD)
+void createAccount() {
+    try {
+        if (nameField.getText().trim().isEmpty()) {
+            output.setText("Name Required");
+            return;
         }
-    }
 
-    static boolean isValidId(String id) {
-        try {
-            Integer.parseInt(id);
-            return true;
-        } catch (Exception e) {
-            return false;
+        String pass = new String(passField.getPassword());
+        if (pass.length() < 4) {
+            output.setText("Password too short");
+            return;
         }
+
+        double bal = Double.parseDouble(amountField.getText());
+        if (bal < 0) {
+            output.setText("Balance cannot be negative");
+            return;
+        }
+
+        int id = new Random().nextInt(9000) + 1000;
+        Account acc = new SavingsAccount(id, nameField.getText(), pass, bal);
+        dao.save(acc);
+        output.setText("Account Created\nID: " + id);
+
+    } catch (Exception e) {
+        output.setText("Creation Failed");
     }
 }
 
-/* =======================
-   INTERFACE
-======================= */
-interface IAccount {
-    void deposit(double amt);
-    void withdraw(double amt) throws Exception;
-    double getBalance();
-    int getAccountId();
-    String getName();
-}
+3️⃣ LOGIN VALIDATION
+void login() {
+    try {
+        if (idField.getText().isEmpty()) {
+            output.setText("Enter Account ID");
+            return;
+        }
 
-/* =======================
-   ABSTRACT CLASS
-======================= */
-abstract class Account implements IAccount {
-    protected int id;
-    protected String name;
-    protected String password;
-    protected double balance;
+        int id = Integer.parseInt(idField.getText());
+        current = dao.get(id);
 
-    public Account(int id, String name, String pass, double bal) {
-        this.id = id;
-        this.name = name;
-        this.password = pass;
-        this.balance = bal;
-    }
+        if (current == null) {
+            output.setText("Account Not Found");
+            return;
+        }
 
-    public int getAccountId() { return id; }
-    public String getName() { return name; }
-    public double getBalance() { return balance; }
+        String pass = new String(passField.getPassword());
+        if (!((Account) current).checkPassword(pass)) {
+            output.setText("Wrong Password");
+            return;
+        }
 
-    public boolean checkPassword(String p) {
-        return password.equals(p);
-    }
+        output.setText("Login Success\nBalance: " + current.getBalance());
 
-    public synchronized void deposit(double amt) {
-        if (amt <= 0)
-            throw new IllegalArgumentException("Invalid deposit");
-        balance += amt;
+    } catch (NumberFormatException e) {
+        output.setText("Invalid ID Format");
+    } catch (Exception e) {
+        output.setText("Login Error");
     }
 }
 
-/* =======================
-   CHILD CLASS
-======================= */
-class SavingsAccount extends Account {
+4️⃣ TRANSACTION VALIDATION
+void doTransaction(boolean dep) {
+    try {
+        if (current == null) {
+            output.setText("Login First");
+            return;
+        }
 
-    public SavingsAccount(int id, String n, String p, double bal) {
-        super(id, n, p, bal);
-    }
+        double amt = Double.parseDouble(amountField.getText());
+        if (amt <= 0) {
+            output.setText("Invalid Amount");
+            return;
+        }
 
-    @Override
-    public synchronized void withdraw(double amt) throws Exception {
-        if (amt <= 0)
-            throw new Exception("Invalid withdraw");
-        if (amt > balance)
-            throw new Exception("Insufficient balance");
-        balance -= amt;
+        Thread t = new TransactionThread(current, amt, dep);
+        t.start();
+        t.join();
+
+        dao.update(current);
+        output.setText("Balance: " + current.getBalance());
+
+    } catch (Exception e) {
+        output.setText("Transaction Failed");
     }
 }
 
-/* =======================
-   JDBC CONNECTION
-======================= */
-class DBConnection {
+5️⃣ DAO & DATABASE VALIDATION
+Prevent Duplicate Account ID
+ALTER TABLE accounts ADD PRIMARY KEY(id);
 
-    private static final String URL =
-            "jdbc:mysql://localhost:3306/bank_db";
-    private static final String USER = "root";
-    private static final String PASS = "";
+Check NULL Before Casting
+if (rs == null) return null;
 
-    static {
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (Exception e) {
-            System.out.println("MySQL Driver Error");
-        }
-    }
-
-    public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASS);
-    }
-}
-
-/* =======================
-   DAO CLASS
-======================= */
-class AccountDAO {
-
-    public void save(IAccount acc) throws Exception {
-        Account a = (Account) acc;
-
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps =
-                con.prepareStatement(
-                 "INSERT INTO accounts VALUES (?,?,?,?)")) {
-
-            ps.setInt(1, a.id);
-            ps.setString(2, a.name);
-            ps.setString(3, a.password);
-            ps.setDouble(4, a.balance);
-            ps.executeUpdate();
-        }
-    }
-
-    public IAccount get(int id) throws Exception {
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps =
-                con.prepareStatement(
-                 "SELECT * FROM accounts WHERE id=?")) {
-
-            ps.setInt(1, id);
-            ResultSet rs = ps.executeQuery();
-
-            if (!rs.next()) return null;
-
-            return new SavingsAccount(
-                    rs.getInt("id"),
-                    rs.getString("name"),
-                    rs.getString("password"),
-                    rs.getDouble("balance")
-            );
-        }
-    }
-
-    public void update(IAccount acc) throws Exception {
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps =
-                con.prepareStatement(
-                 "UPDATE accounts SET balance=? WHERE id=?")) {
-
-            ps.setDouble(1, acc.getBalance());
-            ps.setInt(2, acc.getAccountId());
-            ps.executeUpdate();
-        }
-    }
-}
-
-/* =======================
-   MULTITHREADING
-======================= */
-class TransactionThread extends Thread {
-
-    private IAccount acc;
-    private double amt;
-    private boolean deposit;
-
-    public TransactionThread(IAccount acc, double amt, boolean dep) {
-        this.acc = acc;
-        this.amt = amt;
-        this.deposit = dep;
-    }
-
-    public void run() {
-        synchronized (acc) {
-            try {
-                if (deposit)
-                    acc.deposit(amt);
-                else
-                    acc.withdraw(amt);
-            } catch (Exception e) {
-                System.out.println("Transaction Failed");
-            }
-        }
-    }
-}
-
-/* =======================
-   GUI MAIN CLASS
-======================= */
-public class OnlineBankingSystemGUI extends JFrame {
-
-    private JTextField idField, nameField, amountField;
-    private JPasswordField passField;
-    private JTextArea output;
-
-    private AccountDAO dao = new AccountDAO();
-    private IAccount currentAccount;
-
-    public OnlineBankingSystemGUI() {
-
-        setTitle("Online Banking System");
-        setSize(500, 450);
-        setLayout(new GridLayout(8, 2));
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-
-        idField = new JTextField();
-        nameField = new JTextField();
-        passField = new JPasswordField();
-        amountField = new JTextField();
-        output = new JTextArea();
-
-        JButton create = new JButton("Create Account");
-        JButton login = new JButton("Login");
-        JButton deposit = new JButton("Deposit");
-        JButton withdraw = new JButton("Withdraw");
-
-        add(new JLabel("Account ID"));
-        add(idField);
-        add(new JLabel("Name"));
-        add(nameField);
-        add(new JLabel("Password"));
-        add(passField);
-        add(new JLabel("Amount"));
-        add(amountField);
-
-        add(create);
-        add(login);
-        add(deposit);
-        add(withdraw);
-
-        add(new JLabel("Output"));
-        add(new JScrollPane(output));
-
-        create.addActionListener(e -> createAccount());
-        login.addActionListener(e -> login());
-        deposit.addActionListener(e -> deposit());
-        withdraw.addActionListener(e -> withdraw());
-
-        setVisible(true);
-    }
-
-    private void createAccount() {
-        try {
-            String name = nameField.getText();
-            String pass = new String(passField.getPassword());
-            String amtText = amountField.getText();
-
-            if (!Validator.isValidName(name)) {
-                output.setText("Invalid Name");
-                return;
-            }
-
-            if (!Validator.isValidPassword(pass)) {
-                output.setText("Password must be 4+ chars");
-                return;
-            }
-
-            if (!Validator.isValidAmount(amtText)) {
-                output.setText("Invalid amount");
-                return;
-            }
-
-            int id = new Random().nextInt(9000) + 1000;
-            double amt = Double.parseDouble(amtText);
-
-            IAccount acc = new SavingsAccount(id, name, pass, amt);
-            dao.save(acc);
-
-            output.setText("Account Created\nID: " + id);
-
-        } catch (Exception e) {
-            output.setText("Creation Failed");
-        }
-    }
-
-    private void login() {
-        try {
-            if (!Validator.isValidId(idField.getText())) {
-                output.setText("Invalid Account ID");
-                return;
-            }
-
-            int id = Integer.parseInt(idField.getText());
-            String pass = new String(passField.getPassword());
-
-            currentAccount = dao.get(id);
-
-            if (currentAccount == null ||
-               !((Account) currentAccount).checkPassword(pass)) {
-
-                output.setText("Login Failed");
-                return;
-            }
-
-            output.setText("Login Successful\nBalance: " +
-                    currentAccount.getBalance());
-
-        } catch (Exception e) {
-            output.setText("Login Error");
-        }
-    }
-
-    private void deposit() {
-        try {
-            if (currentAccount == null) {
-                output.setText("Login first");
-                return;
-            }
-
-            if (!Validator.isValidAmount(amountField.getText())) {
-                output.setText("Invalid Amount");
-                return;
-            }
-
-            double amt = Double.parseDouble(amountField.getText());
-
-            Thread t = new TransactionThread(currentAccount, amt, true);
-            t.start();
-            t.join();
-
-            dao.update(currentAccount);
-            output.setText("Deposit Successful\nBalance: " +
-                    currentAccount.getBalance());
-
-        } catch (Exception e) {
-            output.setText("Deposit Failed");
-        }
-    }
-
-    private void withdraw() {
-        try {
-            if (currentAccount == null) {
-                output.setText("Login first");
-                return;
-            }
-
-            if (!Validator.isValidAmount(amountField.getText())) {
-                output.setText("Invalid Amount");
-                return;
-            }
-
-            double amt = Double.parseDouble(amountField.getText());
-
-            Thread t = new TransactionThread(currentAccount, amt, false);
-            t.start();
-            t.join();
-
-            dao.update(currentAccount);
-            output.setText("Withdraw Successful\nBalance: " +
-                    currentAccount.getBalance());
-
-        } catch (Exception e) {
-            output.setText(e.getMessage());
-        }
-    }
-
-    public static void main(String[] args) {
-        new OnlineBankingSystemGUI();
-    }
+6️⃣ SERVLET VALIDATION
+if (req.getParameter("id") == null ||
+    req.getParameter("password") == null) {
+    res.getWriter().println("Invalid Request");
+    return;
 }
