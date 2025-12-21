@@ -3,10 +3,13 @@ import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
 import java.util.*;
+import javax.servlet.*;
+import javax.servlet.http.*;
+import java.io.*;
 
 /* 
    1. INTERFACE
-======================= */
+ */
 interface IAccount {
     void deposit(double amt);
     void withdraw(double amt) throws Exception;
@@ -41,7 +44,7 @@ abstract class Account implements IAccount {
 
     public synchronized void deposit(double amt) {
         if (amt <= 0)
-            throw new IllegalArgumentException("Invalid amount");
+            throw new IllegalArgumentException("Invalid Amount");
         balance += amt;
     }
 }
@@ -50,6 +53,7 @@ abstract class Account implements IAccount {
    3. CHILD CLASS
  */
 class SavingsAccount extends Account {
+
     public SavingsAccount(int id, String n, String p, double bal) {
         super(id, n, p, bal);
     }
@@ -57,19 +61,25 @@ class SavingsAccount extends Account {
     @Override
     public synchronized void withdraw(double amt) throws Exception {
         if (amt <= 0)
-            throw new Exception("Invalid amount");
+            throw new Exception("Invalid Amount");
         if (amt > balance)
-            throw new Exception("Insufficient balance");
+            throw new Exception("Insufficient Balance");
         balance -= amt;
     }
 }
 
-/* 
-   4. JDBC CONNECTION
+/*
+   4. COLLECTIONS & GENERICS
+ */
+class AccountCache {
+    public static Map<Integer, IAccount> cache = new HashMap<>();
+}
+
+/*
+   5. JDBC CONNECTION
  */
 class DBConnection {
-    private static final String URL =
-        "jdbc:mysql://localhost:3306/bank_db";
+    private static final String URL = "jdbc:mysql://localhost:3306/bank_db";
     private static final String USER = "root";
     private static final String PASS = "";
 
@@ -77,7 +87,7 @@ class DBConnection {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (Exception e) {
-            System.out.println("Driver error");
+            System.out.println("Driver Load Error");
         }
     }
 
@@ -86,61 +96,59 @@ class DBConnection {
     }
 }
 
-/* 
-   5. DAO CLASS
+/*
+   6. DAO CLASS
  */
 class AccountDAO {
 
-    public void save(IAccount acc) throws Exception {
-        Account a = (Account) acc;
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps =
-               con.prepareStatement(
-                 "INSERT INTO accounts VALUES (?,?,?,?)")) {
-
-            ps.setInt(1, a.id);
-            ps.setString(2, a.name);
-            ps.setString(3, a.password);
-            ps.setDouble(4, a.balance);
-            ps.executeUpdate();
-        }
+    public void save(Account a) throws Exception {
+        Connection con = DBConnection.getConnection();
+        PreparedStatement ps =
+            con.prepareStatement("INSERT INTO accounts VALUES (?,?,?,?)");
+        ps.setInt(1, a.id);
+        ps.setString(2, a.name);
+        ps.setString(3, a.password);
+        ps.setDouble(4, a.balance);
+        ps.executeUpdate();
+        con.close();
     }
 
     public IAccount get(int id) throws Exception {
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps =
-               con.prepareStatement(
-                 "SELECT * FROM accounts WHERE id=?")) {
+        if (AccountCache.cache.containsKey(id))
+            return AccountCache.cache.get(id);
 
-            ps.setInt(1, id);
-            ResultSet rs = ps.executeQuery();
+        Connection con = DBConnection.getConnection();
+        PreparedStatement ps =
+            con.prepareStatement("SELECT * FROM accounts WHERE id=?");
+        ps.setInt(1, id);
+        ResultSet rs = ps.executeQuery();
 
-            if (!rs.next()) return null;
+        if (!rs.next()) return null;
 
-            return new SavingsAccount(
-                rs.getInt("id"),
-                rs.getString("name"),
-                rs.getString("password"),
-                rs.getDouble("balance")
-            );
-        }
+        IAccount acc = new SavingsAccount(
+            rs.getInt("id"),
+            rs.getString("name"),
+            rs.getString("password"),
+            rs.getDouble("balance")
+        );
+        AccountCache.cache.put(id, acc);
+        con.close();
+        return acc;
     }
 
     public void update(IAccount acc) throws Exception {
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps =
-               con.prepareStatement(
-                 "UPDATE accounts SET balance=? WHERE id=?")) {
-
-            ps.setDouble(1, acc.getBalance());
-            ps.setInt(2, acc.getAccountId());
-            ps.executeUpdate();
-        }
+        Connection con = DBConnection.getConnection();
+        PreparedStatement ps =
+            con.prepareStatement("UPDATE accounts SET balance=? WHERE id=?");
+        ps.setDouble(1, acc.getBalance());
+        ps.setInt(2, acc.getAccountId());
+        ps.executeUpdate();
+        con.close();
     }
 }
 
 /* 
-   6. MULTITHREADING
+   7. MULTITHREADING
  */
 class TransactionThread extends Thread {
     private IAccount acc;
@@ -159,25 +167,25 @@ class TransactionThread extends Thread {
                 if (deposit) acc.deposit(amt);
                 else acc.withdraw(amt);
             } catch (Exception e) {
-                System.out.println("Transaction failed");
+                System.out.println("Transaction Failed");
             }
         }
     }
 }
 
-/* =======================
-   7. GUI MAIN CLASS
-======================= */
-public class OnlineBankingSystemGUI extends JFrame {
+/*
+   8. GUI (SWING)
+ */
+public class OnlineBankingSystem extends JFrame {
 
-    private JTextField idField, nameField, amountField;
-    private JPasswordField passField;
-    private JTextArea output;
+    JTextField idField, nameField, amountField;
+    JPasswordField passField;
+    JTextArea output;
 
-    private AccountDAO dao = new AccountDAO();
-    private IAccount currentAccount;
+    AccountDAO dao = new AccountDAO();
+    IAccount current;
 
-    public OnlineBankingSystemGUI() {
+    public OnlineBankingSystem() {
         setTitle("Online Banking System");
         setSize(500, 450);
         setLayout(new GridLayout(8, 2));
@@ -189,100 +197,98 @@ public class OnlineBankingSystemGUI extends JFrame {
         amountField = new JTextField();
         output = new JTextArea();
 
-        JButton create = new JButton("Create Account");
+        JButton create = new JButton("Create");
         JButton login = new JButton("Login");
         JButton deposit = new JButton("Deposit");
         JButton withdraw = new JButton("Withdraw");
 
-        add(new JLabel("Account ID"));
-        add(idField);
-        add(new JLabel("Name"));
-        add(nameField);
-        add(new JLabel("Password"));
-        add(passField);
-        add(new JLabel("Amount"));
-        add(amountField);
+        add(new JLabel("Account ID")); add(idField);
+        add(new JLabel("Name")); add(nameField);
+        add(new JLabel("Password")); add(passField);
+        add(new JLabel("Amount")); add(amountField);
 
-        add(create);
-        add(login);
-        add(deposit);
-        add(withdraw);
-
-        add(new JLabel("Output"));
-        add(new JScrollPane(output));
+        add(create); add(login);
+        add(deposit); add(withdraw);
+        add(new JLabel("Output")); add(new JScrollPane(output));
 
         create.addActionListener(e -> createAccount());
         login.addActionListener(e -> login());
-        deposit.addActionListener(e -> deposit());
-        withdraw.addActionListener(e -> withdraw());
+        deposit.addActionListener(e -> doTransaction(true));
+        withdraw.addActionListener(e -> doTransaction(false));
 
         setVisible(true);
     }
 
-    private void createAccount() {
+    void createAccount() {
         try {
             int id = new Random().nextInt(9000) + 1000;
-            IAccount acc = new SavingsAccount(
+            Account acc = new SavingsAccount(
                 id,
                 nameField.getText(),
                 new String(passField.getPassword()),
                 Double.parseDouble(amountField.getText())
             );
             dao.save(acc);
-            output.setText("Account created\nID: " + id);
+            output.setText("Account Created\nID: " + id);
         } catch (Exception e) {
-            output.setText("Error creating account");
+            output.setText("Creation Failed");
         }
     }
 
-    private void login() {
+    void login() {
         try {
             int id = Integer.parseInt(idField.getText());
-            currentAccount = dao.get(id);
-
-            if (currentAccount != null &&
-                ((Account) currentAccount)
-                .checkPassword(new String(passField.getPassword()))) {
-
-                output.setText("Login successful\nBalance: "
-                    + currentAccount.getBalance());
+            current = dao.get(id);
+            if (current != null &&
+                ((Account) current).checkPassword(
+                    new String(passField.getPassword()))) {
+                output.setText("Login Success\nBalance: " +
+                    current.getBalance());
             } else {
-                output.setText("Login failed");
+                output.setText("Login Failed");
             }
         } catch (Exception e) {
             output.setText("Error");
         }
     }
 
-    private void deposit() {
+    void doTransaction(boolean dep) {
         try {
             double amt = Double.parseDouble(amountField.getText());
-            Thread t = new TransactionThread(currentAccount, amt, true);
+            Thread t = new TransactionThread(current, amt, dep);
             t.start();
             t.join();
-            dao.update(currentAccount);
-            output.setText("Deposited\nBalance: "
-                + currentAccount.getBalance());
+            dao.update(current);
+            output.setText("Balance: " + current.getBalance());
         } catch (Exception e) {
-            output.setText("Deposit failed");
-        }
-    }
-
-    private void withdraw() {
-        try {
-            double amt = Double.parseDouble(amountField.getText());
-            Thread t = new TransactionThread(currentAccount, amt, false);
-            t.start();
-            t.join();
-            dao.update(currentAccount);
-            output.setText("Withdrawn\nBalance: "
-                + currentAccount.getBalance());
-        } catch (Exception e) {
-            output.setText(e.getMessage());
+            output.setText("Transaction Error");
         }
     }
 
     public static void main(String[] args) {
-        new OnlineBankingSystemGUI();
+        new OnlineBankingSystem();
+    }
+}
+
+/*
+   9. SERVLETS 
+ */
+class LoginServlet extends HttpServlet {
+    protected void doPost(HttpServletRequest req,
+                          HttpServletResponse res)
+            throws IOException {
+        int id = Integer.parseInt(req.getParameter("id"));
+        String pass = req.getParameter("password");
+        try {
+            AccountDAO dao = new AccountDAO();
+            Account acc = (Account) dao.get(id);
+            res.getWriter().println(
+                acc != null && acc.checkPassword(pass)
+                ? "Login Success"
+                : "Login Failed"
+            );
+        } catch (Exception e) {
+            res.getWriter().println("Error");
+        }
     }
 }
