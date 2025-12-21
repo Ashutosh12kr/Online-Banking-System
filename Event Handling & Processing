@@ -1,35 +1,131 @@
-Event Handling & Processing (Short)
+🔹 Event Handling and Event Processing
+1️⃣ What is Event Handling?
 
-Definition: Event Handling allows the program to respond to user actions like button clicks. Event Processing is the logic executed after the event (e.g., validation, DB update, UI update).
+Event Handling is the mechanism that allows a program to respond to user actions such as:
 
-Implementation in Project:
+Button click
 
-Event Sources: JButton – Create, Login, Deposit, Withdraw
+Mouse movement
 
-Listener: ActionListener with lambda expressions
+Keyboard input
 
+In Java Swing, event handling follows the Event–Listener Model.
+
+2️⃣ Event–Listener Model
+
+Java uses the Delegation Event Model which has three main parts:
+
+Event Source
+→ Component that generates the event
+Example: JButton
+
+Event Object
+→ Contains information about the event
+Example: ActionEvent
+
+Event Listener
+→ Object that receives and handles the event
+Example: ActionListener
+
+3️⃣ Event Handling in Online Banking System
+🔸 Event Source
+JButton create = new JButton("Create");
+JButton login = new JButton("Login");
+JButton deposit = new JButton("Deposit");
+JButton withdraw = new JButton("Withdraw");
+
+🔸 Event Listener Registration
 create.addActionListener(e -> createAccount());
-deposit.addActionListener(e -> deposit());
+login.addActionListener(e -> login());
+deposit.addActionListener(e -> doTransaction(true));
+withdraw.addActionListener(e -> doTransaction(false));
 
 
-Processing Steps:
+Here:
 
-Validate input
+addActionListener() registers the listener
 
-Execute business logic (deposit/withdraw with threads)
+Lambda expression acts as the listener
 
-Update database via JDBC
+🔸 Event Object
 
-Update GUI output
+When a button is clicked, an ActionEvent object is automatically created by Swing.
 
-Advantages:
+ActionEvent e
 
-Responsive GUI
+4️⃣ Event Processing (Step-by-Step Flow)
+✅ Example: CREATE Button
 
-Secure input validation
+Step 1: User clicks Create
+Step 2: ActionEvent is generated
+Step 3: Listener captures the event
+Step 4: createAccount() method executes
+Step 5: Account object is created
+Step 6: Data is saved to database
+Step 7: Output displayed in text area
 
-Multithreading support
+5️⃣ Code for Event Processing
+Create Account Event
+create.addActionListener(e -> createAccount());
 
-Real-time database updates
+void createAccount() {
+    // Validation
+    // Object creation
+    // Database save
+    // Output display
+}
 
-Rubric Mapping: Event Handling and Processing ✅ Fully Implemented
+Login Event
+login.addActionListener(e -> login());
+
+void login() {
+    // Fetch account
+    // Password verification
+    // Display balance
+}
+
+Deposit / Withdraw Event
+deposit.addActionListener(e -> doTransaction(true));
+withdraw.addActionListener(e -> doTransaction(false));
+
+void doTransaction(boolean dep) {
+    // Thread creation
+    // Deposit or withdraw
+    // Update database
+}
+
+6️⃣ Multithreading in Event Processing
+
+To prevent UI freezing:
+
+Thread t = new TransactionThread(current, amt, dep);
+t.start();
+t.join();
+
+
+✔ Ensures:
+
+Safe transaction
+
+No race condition
+
+UI responsiveness
+
+7️⃣ Advantages of Event Handling
+
+✔ User-friendly interaction
+✔ Separation of UI and logic
+✔ Dynamic response to user actions
+✔ Scalable design
+
+8️⃣ Event Handling in Servlets (Short Note)
+
+In Servlets, events are HTTP Requests.
+
+protected void doPost(HttpServletRequest req,
+                      HttpServletResponse res)
+
+
+✔ Request acts as event
+✔ Servlet processes event
+✔ Response sent back to client
