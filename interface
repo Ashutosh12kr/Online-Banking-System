@@ -1,62 +1,87 @@
-// ----------------- INTERFACE -----------------
+🔹 Interface (Core Java)
+1️⃣ What is an Interface?
+
+An interface in Java is a blueprint of a class that contains abstract methods (methods without body).
+It is used to achieve 100% abstraction and to define what a class must do, not how it does it.
+
+2️⃣ Why Interface is Used in This Project?
+
+In the Online Banking System, an interface is used to:
+
+Define common banking operations
+
+Support multiple account types
+
+Achieve loose coupling
+
+Enable polymorphism
+
+3️⃣ Interface Used in Project
+📌 IAccount Interface
 interface IAccount {
-    void deposit(double amt);                // Deposit money into the account
-    void withdraw(double amt) throws Exception; // Withdraw money; throws exception if invalid
-    double getBalance();                      // Get current balance
-    int getAccountId();                        // Get account ID
-    String getName();                          // Get account holder's name
+    void deposit(double amt);
+    void withdraw(double amt) throws Exception;
+    double getBalance();
+    int getAccountId();
+    String getName();
 }
-✅ Explanation:
-Purpose: The interface defines common behaviors for any type of bank account.
 
-Methods:
-
-deposit(double amt) → Adds money to the account
-
-withdraw(double amt) → Deducts money; throws exception if amount is invalid or insufficient
-
-getBalance() → Returns current account balance
-
-getAccountId() → Returns account ID
-
-getName() → Returns account holder’s name
-
-Implementation: Any class that represents a bank account (like SavingsAccount or CurrentAccount) must implement all methods of IAccount.
-
-Example implementation in a class:
-
-java
-Copy code
-class SavingsAccount implements IAccount {
-    private int id;
-    private String name;
-    private double balance;
-
-    public SavingsAccount(int id, String name, double balance) {
-        this.id = id;
-        this.name = name;
-        this.balance = balance;
-    }
-
-    @Override
-    public void deposit(double amt) {
-        if (amt <= 0) throw new IllegalArgumentException("Invalid deposit");
-        balance += amt;
-    }
-
-    @Override
-    public void withdraw(double amt) throws Exception {
-        if (amt <= 0 || amt > balance) throw new Exception("Invalid withdraw");
-        balance -= amt;
-    }
-
-    @Override
-    public double getBalance() { return balance; }
-
-    @Override
-    public int getAccountId() { return id; }
-
-    @Override
-    public String getName() { return name; }
+4️⃣ Explanation of Methods
+Method	Purpose
+deposit()	Adds amount to account
+withdraw()	Removes amount from account
+getBalance()	Returns current balance
+getAccountId()	Returns account ID
+getName()	Returns account holder name
+5️⃣ Implementation of Interface
+📌 Abstract Class Implementing Interface
+abstract class Account implements IAccount {
+    protected int id;
+    protected String name;
+    protected String password;
+    protected double balance;
 }
-This demonstrates OOP abstraction and interface implementation clearly.
+
+
+✔ Interface methods are implemented in:
+
+Account (partially)
+
+SavingsAccount (fully)
+
+6️⃣ Polymorphism Using Interface
+IAccount acc = new SavingsAccount(101, "Ashu", "1234", 5000);
+
+
+✔ Allows:
+
+Same reference for different account types
+
+Easy future extension (CurrentAccount, LoanAccount)
+
+7️⃣ Interface in DAO & Collections
+Map<Integer, IAccount> cache = new HashMap<>();
+
+
+✔ Ensures:
+
+Generic handling of accounts
+
+Flexibility
+
+Clean design
+
+8️⃣ Advantages of Using Interface
+
+✔ Achieves abstraction
+✔ Supports multiple inheritance
+✔ Improves security
+✔ Increases flexibility
+✔ Makes code scalable
+
+9️⃣ Difference: Interface vs Abstract Class
+Interface	Abstract Class
+100% abstraction	Partial abstraction
+No constructor	Can have constructor
+Methods abstract	Abstract + concrete
+Multiple inheritance	Single inheritance
